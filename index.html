@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#1f2937">
+<title>Waffle POS</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:system-ui,Arial,sans-serif;background:#f3f4f6;color:#111827;padding-bottom:70px}
+header{background:#1f2937;color:#fff;padding:12px 14px;font-weight:700;display:flex;justify-content:space-between;position:sticky;top:0;z-index:5}
+header span{font-weight:400;font-size:13px;opacity:.8}
+main{padding:10px;max-width:1100px;margin:auto}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #d1d5db;display:flex;z-index:5}
+nav button{flex:1;border:0;background:none;padding:10px 2px;font-size:12px;color:#6b7280}
+nav button.on{color:#d97706;font-weight:700;border-top:3px solid #d97706}
+h3{margin:12px 0 6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.tile{border:0;border-radius:12px;color:#fff;font-weight:700;padding:16px 6px;font-size:15px;min-height:84px}
+.tile small{display:block;font-weight:400;margin-top:4px}
+.card{background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 3px #0002}
+.pos{display:grid;gap:10px}
+@media(min-width:800px){.pos{grid-template-columns:1.4fr 1fr}}
+.row{display:flex;gap:6px;align-items:center;margin:6px 0;flex-wrap:wrap}
+.row>*{flex:1}
+.row .sm{flex:0 0 auto}
+button.b{border:2px solid #d1d5db;background:#fff;border-radius:10px;padding:12px 6px;font-weight:600;font-size:14px}
+button.b.on{border-color:#d97706;background:#fef3c7}
+button.go{width:100%;background:#16a34a;color:#fff;border:0;border-radius:10px;padding:15px;font-size:17px;font-weight:700;margin-top:6px}
+button.red{background:#dc2626;color:#fff;border:0;border-radius:8px;padding:8px 10px}
+button.blue{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:10px 12px;font-weight:600}
+input,select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:15px;background:#fff}
+label{font-size:12px;color:#6b7280;display:block;margin-top:6px}
+.line{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f3f4f6;gap:6px}
+.q{display:flex;align-items:center;gap:6px}
+.q button{width:32px;height:32px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:18px}
+.tot{display:flex;justify-content:space-between;padding:3px 0}
+.big{font-size:20px;font-weight:800}
+.green{color:#16a34a}.redt{color:#dc2626}.gray{color:#6b7280;font-size:13px}
+.low{background:#fee2e2}
+.bar{height:16px;background:#e5e7eb;border-radius:8px;overflow:hidden}
+.bar div{height:100%;background:#16a34a}
+.modal{position:fixed;inset:0;background:#0007;display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.modal .box{background:#fff;width:100%;max-width:500px;border-radius:16px 16px 0 0;padding:16px}
+.chip{display:inline-block;border:2px solid #d1d5db;border-radius:20px;padding:10px 14px;margin:4px;font-weight:600;background:#fff}
+.chip.on{border-color:#16a34a;background:#dcfce7}
+.late{border-left:6px solid #dc2626}.ok{border-left:6px solid #f59e0b}.rdy{border-left:6px solid #16a34a}
+/* ---- UI polish ---- */
+body{background:#fff7ed}
+header{background:linear-gradient(135deg,#92400e,#d97706);font-size:18px;padding:14px 16px;box-shadow:0 2px 8px #0003}
+header span{font-size:14px}
+h3{color:#92400e;font-size:17px}
+.card{border-radius:16px;padding:14px;box-shadow:0 2px 8px #0001}
+.grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.tile{border-radius:16px;min-height:100px;font-size:16px;display:flex;flex-direction:column;justify-content:center;align-items:center;box-shadow:0 3px 0 #0003;transition:transform .08s}
+.tile:active{transform:scale(.95);box-shadow:none}
+.tile small{background:#fff3;border-radius:20px;padding:3px 10px;font-size:14px;font-weight:700}
+button.b{padding:14px 6px;font-size:15px;border-radius:12px}
+button.go{border-radius:14px;padding:16px;font-size:18px;box-shadow:0 3px 0 #15803d}
+button.go:active{transform:translateY(2px);box-shadow:none}
+input,select{padding:12px;font-size:16px;border-radius:10px}
+input:focus,select:focus{outline:2px solid #d97706;border-color:#d97706}
+.q button{width:38px;height:38px;font-size:20px}
+.chip{padding:12px 16px;font-size:15px}
+nav{box-shadow:0 -2px 8px #0002;padding-bottom:env(safe-area-inset-bottom)}
+nav button{font-size:11px;padding:6px 2px;line-height:1.3}
+nav button span{display:block;font-size:22px}
+.cartbar{display:none;position:fixed;left:10px;right:10px;bottom:70px;background:#16a34a;color:#fff;border-radius:14px;padding:14px 16px;font-size:16px;font-weight:700;justify-content:space-between;box-shadow:0 4px 14px #0004;z-index:6}
+@media(max-width:799px){.cartbar.show{display:flex}body{padding-bottom:130px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const KEY='waffle_pos_v1';
+const $=id=>document.getElementById(id);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const money=n=>Math.round(n).toLocaleString('en-US')+' ৳';
+const dkey=t=>new Date(t).toLocaleDateString('en-CA');
+const todayKey=()=>dkey(Date.now());
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const COLORS={'Waffles':'#d97706','Cold Drinks':'#0284c7','Add-Ons':'#059669'};
+const col=c=>COLORS[c]||'#7c3aed';
+
+function seed(){return{
+ settings:{fixedMonthly:32000,days:26,fpMarkup:25,fpComm:28,paMarkup:25,paComm:28,mfs:1.5,target:325000,openingCash:0},
+ ingredients:[
+  {id:'batter',name:'Batter portion',unit:'portion',cost:19,stock:100,low:10},
+  {id:'nutella',name:'Nutella',unit:'g',cost:1.2,stock:3000,low:500},
+  {id:'brownie',name:'Brownie piece',unit:'pc',cost:12,stock:50,low:10},
+  {id:'box',name:'Box & fork',unit:'pc',cost:10,stock:200,low:30},
+  {id:'cream',name:'Whipped cream',unit:'serving',cost:8,stock:60,low:10},
+  {id:'cup',name:'Cup & straw',unit:'pc',cost:6,stock:100,low:20},
+  {id:'cmix',name:'Cold coffee mix',unit:'serving',cost:35,stock:60,low:10}],
+ menu:[
+  {id:'m1',name:'Classic Nutella Waffle',cat:'Waffles',price:120,rec:[{ing:'batter',qty:1},{ing:'nutella',qty:35},{ing:'box',qty:1}]},
+  {id:'m2',name:'Nutella Brownie Waffle',cat:'Waffles',price:160,rec:[{ing:'batter',qty:1},{ing:'nutella',qty:35},{ing:'brownie',qty:1},{ing:'box',qty:1}]},
+  {id:'m3',name:'Plain Sugar Waffle',cat:'Waffles',price:70,rec:[{ing:'batter',qty:1},{ing:'box',qty:1}]},
+  {id:'m4',name:'Cold Coffee',cat:'Cold Drinks',price:120,rec:[{ing:'cup',qty:1},{ing:'cmix',qty:1}]}],
+ mods:[
+  {id:'x1',name:'Extra Nutella',cat:'Waffles',price:40,rec:[{ing:'nutella',qty:20}]},
+  {id:'x2',name:'Whipped Cream',cat:'Waffles',price:30,rec:[{ing:'cream',qty:1}]},
+  {id:'x3',name:'On a Stick',cat:'Waffles',price:0,rec:[]}],
+ orders:[],expenses:[],wastage:[],closings:[]}}
+
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.menu)return d}catch(e){}return seed()}
+let S=load();
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+
+let tab='pos',cart=[],channel='walk',pay='cash',discount=0,splitCash=0,modalItem=null,selMods=[];
+const TABS=[['pos','🧇 POS'],['queue','⏱ Queue'],['stock','📦 Stock'],['exp','🧾 Expense'],['close','🌙 Close'],['setup','⚙️ Setup']];
+const EXP_CATS=['Raw Ingredients','Packaging','Gas / Utility','Shop Maintenance','Other','Owner Withdrawal'];
+
+const ing=id=>S.ingredients.find(i=>i.id===id);
+const recCost=rec=>rec.reduce((s,r)=>s+(ing(r.ing)?ing(r.ing).cost*r.qty:0),0);
+const chMarkup=()=>channel==='fp'?S.settings.fpMarkup:channel==='pa'?S.settings.paMarkup:0;
+const chPrice=p=>Math.round(p*(1+chMarkup()/100));
+
+function totals(){
+ const g=cart.reduce((s,l)=>s+chPrice(l.base)*l.qty,0);
+ const d=Math.min(discount,g),t=g-d;
+ const rate=channel==='fp'?S.settings.fpComm:channel==='pa'?S.settings.paComm:0;
+ return{g,d,t,comm:t*rate/100,rate};
+}
+
+/* ---------- POS ---------- */
+function openItem(id){
+ const m=S.menu.find(x=>x.id===id);
+ if(S.mods.some(x=>x.cat===m.cat)){modalItem=m;selMods=[];render()}
+ else addToCart(m,[]);
+}
+function toggleMod(id){selMods=selMods.includes(id)?selMods.filter(x=>x!==id):[...selMods,id];render()}
+function confirmItem(){const m=modalItem;modalItem=null;addToCart(m,selMods);selMods=[]}
+function addToCart(m,mods){
+ const ms=mods.map(id=>S.mods.find(x=>x.id===id));
+ const key=m.id+'|'+[...mods].sort().join(',');
+ const f=cart.find(l=>l.key===key);
+ if(f){f.qty++}else{
+  const rec=[...m.rec,...ms.flatMap(x=>x.rec)];
+  cart.push({key,name:m.name,modNames:ms.map(x=>x.name),base:m.price+ms.reduce((s,x)=>s+x.price,0),rec,cogs:recCost(rec),qty:1});
+ }
+ render();
+}
+function qty(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);render()}
+function setCh(c){channel=c;render()}
+function setPay(p){pay=p;render()}
+function setDisc(v){discount=Math.max(0,+v||0);render()}
+function setSplit(v){splitCash=Math.max(0,+v||0);render()}
+function clearCart(){cart=[];discount=0;splitCash=0;render()}
+
+function placeOrder(){
+ if(!cart.length)return;
+ const T=totals();let cash=0,dig=0;
+ if(channel==='walk'){
+  if(pay==='cash')cash=T.t;else if(pay==='digital')dig=T.t;
+  else{cash=Math.min(splitCash,T.t);dig=T.t-cash}
+ }
+ const items=cart.map(l=>({name:l.name+(l.modNames.length?' + '+l.modNames.join(', '):''),qty:l.qty,price:chPrice(l.base),cogs:l.cogs,rec:l.rec}));
+ S.orders.push({id:uid(),ts:Date.now(),ch:channel,items,gross:T.g,disc:T.d,comm:T.comm,cash,dig,fee:dig*S.settings.mfs/100,cogs:items.reduce((s,i)=>s+i.cogs*i.qty,0),status:'prep'});
+ const low=[];
+ cart.forEach(l=>l.rec.forEach(r=>{const x=ing(r.ing);if(x){x.stock-=r.qty*l.qty;if(x.stock<=x.low&&!low.includes(x.name))low.push(x.name)}}));
+ save();cart=[];discount=0;splitCash=0;
+ render();
+ if(low.length)alert('Low stock: '+low.join(', '));
+}
+
+function vPos(){
+ const cats=[...new Set(S.menu.map(m=>m.cat))];
+ const menu=cats.map(c=>`<h3>${esc(c)}</h3><div class="grid">${S.menu.filter(m=>m.cat===c).map(m=>`<button class="tile" style="background:${col(c)}" onclick="openItem('${m.id}')">${esc(m.name)}<small>${money(chPrice(m.price))}</small></button>`).join('')}</div>`).join('');
+ const T=totals();
+ const lines=cart.map((l,i)=>`<div class="line"><div>${esc(l.name)}<div class="gray">${l.modNames.map(esc).join(', ')}</div></div><div class="q"><button onclick="qty(${i},-1)">−</button><b>${l.qty}</b><button onclick="qty(${i},1)">+</button></div><b>${money(chPrice(l.base)*l.qty)}</b></div>`).join('')||'<div class="gray">Tap a button to add items</div>';
+ const chBtn=(k,t)=>`<button class="b ${channel===k?'on':''}" onclick="setCh('${k}')">${t}</button>`;
+ const pBtn=(k,t)=>`<button class="b ${pay===k?'on':''}" onclick="setPay('${k}')">${t}</button>`;
+ const cart_=`<h3 style="margin-top:0">Order</h3>${lines}
+ <label>Discount (৳)</label><input type="number" inputmode="numeric" value="${discount||''}" onchange="setDisc(this.value)">
+ <label>Channel</label><div class="row">${chBtn('walk','Walk-In')}${chBtn('fp','Foodpanda')}${chBtn('pa','Pathao')}</div>
+ ${channel==='walk'?`<label>Payment</label><div class="row">${pBtn('cash','Cash')}${pBtn('digital','bKash/Nagad')}${pBtn('split','Split')}</div>
+ ${pay==='split'?`<label>Cash part (৳) — rest goes to bKash/Nagad</label><input type="number" inputmode="numeric" value="${splitCash||''}" onchange="setSplit(this.value)">`:''}`:`<div class="gray">Delivery app pays you later. Commission ${T.rate}% is taken off.</div>`}
+ <div style="margin-top:10px"><div class="tot"><span>Subtotal</span><span>${money(T.g)}</span></div>
+ ${T.d?`<div class="tot"><span>Discount</span><span>- ${money(T.d)}</span></div>`:''}
+ ${T.comm?`<div class="tot gray"><span>App commission</span><span>- ${money(T.comm)}</span></div>`:''}
+ <div class="tot big"><span>Total</span><span>${money(T.t)}</span></div></div>
+ <button class="go" onclick="placeOrder()">✅ PLACE ORDER</button>
+ <button class="b" style="width:100%;margin-top:6px" onclick="clearCart()">Clear</button>`;
+ const cnt=cart.reduce((s,l)=>s+l.qty,0);
+ const bar=`<div class="cartbar ${cnt?'show':''}" onclick="document.getElementById('ordercard').scrollIntoView({behavior:'smooth'})"><span>🛒 ${cnt} items · ${money(T.t)}</span><span>View order ▼</span></div>`;
+ return `<div class="pos"><div>${menu}</div><div class="card" id="ordercard">${cart_}</div></div>${bar}`;
+}
+function modalHtml(){
+ if(!modalItem)return '';
+ const ms=S.mods.filter(x=>x.cat===modalItem.cat);
+ return `<div class="modal" onclick="if(event.target===this){modalItem=null;render()}"><div class="box"><h3 style="margin-top:0">${esc(modalItem.name)}</h3>
+ ${ms.map(x=>`<span class="chip ${selMods.includes(x.id)?'on':''}" onclick="toggleMod('${x.id}')">${esc(x.name)}${x.price?' +'+x.price:''}</span>`).join('')}
+ <button class="go" onclick="confirmItem()">Add to order</button></div></div>`;
+}
+
+/* ---------- QUEUE ---------- */
+function setStatus(id,s){S.orders.find(o=>o.id===id).status=s;save();render()}
+function voidOrder(id){
+ if(!confirm('Cancel this order and put stock back?'))return;
+ const o=S.orders.find(x=>x.id===id);
+ o.items.forEach(it=>it.rec.forEach(r=>{const x=ing(r.ing);if(x)x.stock+=r.qty*it.qty}));
+ S.orders=S.orders.filter(x=>x.id!==id);save();render();
+}
+function vQueue(){
+ const k=todayKey(),all=S.orders.filter(o=>dkey(o.ts)===k);
+ const act=all.filter(o=>o.status!=='done');
+ const chName={walk:'Walk-In',fp:'Foodpanda',pa:'Pathao'};
+ if(!act.length)return '<div class="card gray">No active orders 🎉</div>';
+ return act.map(o=>{
+  const n=all.indexOf(o)+1,mins=Math.floor((Date.now()-o.ts)/60000);
+  const cls=o.status==='ready'?'rdy':mins>=4?'late':'ok';
+  return `<div class="card ${cls}"><div class="line" style="border:0"><b>#${n} · ${chName[o.ch]}</b><b class="${mins>=4&&o.status==='prep'?'redt':''}">${o.status==='ready'?'READY':mins+' min'}</b></div>
+  ${o.items.map(i=>`<div>${i.qty} × ${esc(i.name)}</div>`).join('')}
+  <div class="row">${o.status==='prep'?`<button class="blue" onclick="setStatus('${o.id}','ready')">Ready</button>`:''}<button class="go" style="margin:0;padding:10px" onclick="setStatus('${o.id}','done')">Done</button><button class="red sm" onclick="voidOrder('${o.id}')">Cancel</button></div></div>`}).join('');
+}
+
+/* ---------- STOCK ---------- */
+function ingSet(id,f,v){const x=ing(id);x[f]=+v;save()}
+function ingAdd(){
+ const n=$('in_n').value.trim();if(!n)return alert('Write a name');
+ S.ingredients.push({id:uid(),name:n,unit:$('in_u').value||'pc',cost:+$('in_c').value||0,stock:+$('in_s').value||0,low:+$('in_l').value||0});
+ save();render();
+}
+function ingDel(id){
+ if(S.menu.some(m=>m.rec.some(r=>r.ing===id))||S.mods.some(m=>m.rec.some(r=>r.ing===id)))return alert('This ingredient is used in a recipe. Remove it from the recipe first.');
+ if(!confirm('Delete?'))return;S.ingredients=S.ingredients.filter(i=>i.id!==id);save();render();
+}
+function vStock(){
+ const rows=S.ingredients.map(i=>`<div class="card ${i.stock<=i.low?'low':''}"><b>${esc(i.name)}</b> <span class="gray">(${esc(i.unit)})</span>${i.stock<=i.low?' <b class="redt">LOW</b>':''}
+ <div class="row"><div><label>Stock</label><input type="number" value="${Math.round(i.stock*100)/100}" onchange="ingSet('${i.id}','stock',this.value)"></div>
+ <div><label>Cost per ${esc(i.unit)} (৳)</label><input type="number" step="0.01" value="${i.cost}" onchange="ingSet('${i.id}','cost',this.value)"></div>
+ <div><label>Warn below</label><input type="number" value="${i.low}" onchange="ingSet('${i.id}','low',this.value)"></div></div>
+ <button class="red" onclick="ingDel('${i.id}')">Delete</button></div>`).join('');
+ return `<div class="gray" style="margin:4px">When you buy more, type the new stock number. Change cost when prices change.</div>${rows}
+ <div class="card"><h3 style="margin-top:0">Add ingredient</h3>
+ <label>Name</label><input id="in_n"><label>Unit (g, pc, kg...)</label><input id="in_u">
+ <label>Cost per unit (৳)</label><input id="in_c" type="number" step="0.01"><label>Stock now</label><input id="in_s" type="number"><label>Warn below</label><input id="in_l" type="number">
+ <button class="blue" style="margin-top:8px" onclick="ingAdd()">Add</button></div>`;
+}
+
+/* ---------- EXPENSES ---------- */
+function expAdd(){
+ const a=+$('ex_a').value;if(!a)return alert('Write the amount');
+ S.expenses.push({id:uid(),ts:Date.now(),cat:$('ex_c').value,amt:a,note:$('ex_n').value});save();render();
+}
+function expDel(id){S.expenses=S.expenses.filter(e=>e.id!==id);save();render()}
+function vExp(){
+ const k=todayKey(),list=S.expenses.filter(e=>dkey(e.ts)===k);
+ const st=stats(k);
+ return `<div class="card"><h3 style="margin-top:0">Add expense (paid from cash box)</h3>
+ <label>Type</label><select id="ex_c">${EXP_CATS.map(c=>`<option>${c}</option>`).join('')}</select>
+ <label>Amount (৳)</label><input id="ex_a" type="number" inputmode="numeric"><label>Note (optional)</label><input id="ex_n">
+ <button class="go" onclick="expAdd()">Save</button>
+ <div class="gray" style="margin-top:6px">Your own lunch/rickshaw money? Choose <b>Owner Withdrawal</b>. It does not reduce shop profit.</div></div>
+ <div class="card"><b>Today</b> — Shop expenses: ${money(st.opex)} · Owner withdrawal: ${money(st.draw)}
+ ${list.map(e=>`<div class="line"><div>${esc(e.cat)}<div class="gray">${esc(e.note||'')}</div></div><b>${money(e.amt)}</b><button class="red" onclick="expDel('${e.id}')">✕</button></div>`).join('')||'<div class="gray">Nothing yet</div>'}</div>`;
+}
+
+/* ---------- STATS ---------- */
+function stats(k){
+ const os=S.orders.filter(o=>dkey(o.ts)===k),ex=S.expenses.filter(e=>dkey(e.ts)===k),ws=S.wastage.filter(w=>dkey(w.ts)===k);
+ const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0);
+ const gross=sum(os,o=>o.gross),disc=sum(os,o=>o.disc),comm=sum(os,o=>o.comm),fee=sum(os,o=>o.fee),cogs=sum(os,o=>o.cogs);
+ const net=gross-disc-comm,gp=net-fee-cogs;
+ const opex=sum(ex.filter(e=>e.cat!=='Owner Withdrawal'),e=>e.amt),draw=sum(ex.filter(e=>e.cat==='Owner Withdrawal'),e=>e.amt);
+ const waste=sum(ws,w=>w.amt),fixed=S.settings.fixedMonthly/S.settings.days;
+ const profit=gp-opex-waste-fixed;
+ const hrs={};os.forEach(o=>{const h=new Date(o.ts).getHours();hrs[h]=(hrs[h]||0)+1});
+ let ph=null;Object.keys(hrs).forEach(h=>{if(ph===null||hrs[h]>hrs[ph])ph=h});
+ return{orders:os.length,gross,disc,comm,fee,cogs,net,gp,opex,draw,waste,fixed,profit,
+  cashSales:sum(os,o=>o.cash),cashExp:sum(ex,e=>e.amt),
+  be:(opex+fixed)?gp/(opex+fixed)*100:0,peak:ph===null?'-':`${ph}:00–${+ph+1}:00 (${hrs[ph]} orders)`};
+}
+
+/* ---------- CLOSE ---------- */
+function wasteAdd(){
+ const a=+$('w_a').value;if(!a)return alert('Write the amount');
+ S.wastage.push({id:uid(),ts:Date.now(),amt:a,note:$('w_n').value});save();render();
+}
+function wasteDel(id){S.wastage=S.wastage.filter(w=>w.id!==id);save();render()}
+function saveClose(){
+ const k=todayKey(),s=stats(k),exp=S.settings.openingCash+s.cashSales-s.cashExp;
+ const c=+$('counted').value;if(isNaN(c)||$('counted').value==='')return alert('Type the cash you counted');
+ S.closings=S.closings.filter(x=>x.date!==k);
+ S.closings.push({date:k,counted:c,expected:exp,diff:c-exp,profit:s.profit});save();render();
+}
+function vClose(){
+ const k=todayKey(),s=stats(k),exp=S.settings.openingCash+s.cashSales-s.cashExp;
+ const cl=S.closings.find(c=>c.date===k);
+ const days=[...new Set(S.orders.map(o=>dkey(o.ts)))];
+ const total=days.reduce((t,d)=>t+stats(d).profit,0),pct=Math.max(0,Math.min(100,total/S.settings.target*100));
+ const ws=S.wastage.filter(w=>dkey(w.ts)===k);
+ const r=(a,b,c)=>`<div class="tot ${c||''}"><span>${a}</span><span>${b}</span></div>`;
+ return `<div class="card"><h3 style="margin-top:0">1. Wastage</h3>
+ <div class="gray">Thrown batter or burnt waffles. Amount = pieces × cost each.</div>
+ <label>Amount lost (৳)</label><input id="w_a" type="number"><label>Note</label><input id="w_n">
+ <button class="blue" style="margin-top:6px" onclick="wasteAdd()">Add wastage</button>
+ ${ws.map(w=>`<div class="line"><span>${esc(w.note||'Wastage')}</span><b>${money(w.amt)}</b><button class="red" onclick="wasteDel('${w.id}')">✕</button></div>`).join('')}</div>
+ <div class="card"><h3 style="margin-top:0">2. Cash drawer</h3>
+ ${r('Opening cash',money(S.settings.openingCash))}${r('+ Cash sales',money(s.cashSales))}${r('− Cash expenses & withdrawals',money(s.cashExp))}${r('<b>Should be in box</b>','<b>'+money(exp)+'</b>')}
+ <label>Count your notes. Type the total (৳)</label><input id="counted" type="number" inputmode="numeric" value="${cl?cl.counted:''}">
+ <button class="go" onclick="saveClose()">Save closing</button>
+ ${cl?`<div class="tot big ${cl.diff===0?'green':'redt'}" style="margin-top:8px"><span>${cl.diff===0?'Perfect ✅':cl.diff<0?'Shortage':'Overage'}</span><span>${money(cl.diff)}</span></div>`:''}</div>
+ <div class="card"><h3 style="margin-top:0">3. Today's summary</h3>
+ ${r('Orders',s.orders)}${r('Peak hour',s.peak)}
+ ${r('Gross sales',money(s.gross))}${r('− Discounts',money(s.disc))}${r('− App commission',money(s.comm))}${r('<b>Net sales</b>','<b>'+money(s.net)+'</b>')}
+ ${r('− bKash/Nagad fees',money(s.fee))}${r('− Food cost (COGS)',money(s.cogs))}${r('<b>Gross profit</b>','<b>'+money(s.gp)+'</b>')}
+ ${r('− Daily expenses',money(s.opex))}${r('− Wastage',money(s.waste))}${r('− Fixed cost (per day)',money(s.fixed))}
+ <div class="tot big ${s.profit>=0?'green':'redt'}"><span>TRUE NET PROFIT</span><span>${money(s.profit)}</span></div>
+ ${r('Break-even today',Math.round(s.be)+'%')}</div>
+ <div class="card"><b>Payback progress</b><div class="gray">${money(total)} of ${money(S.settings.target)}</div><div class="bar"><div style="width:${pct}%"></div></div></div>`;
+}
+
+/* ---------- SETUP ---------- */
+const FIELDS=[['fixedMonthly','Monthly fixed cost (৳)'],['days','Open days per month'],['fpMarkup','Foodpanda price markup %'],['fpComm','Foodpanda commission %'],['paMarkup','Pathao price markup %'],['paComm','Pathao commission %'],['mfs','bKash/Nagad fee %'],['target','Payback target (৳)'],['openingCash','Opening cash each day (৳)']];
+function setSet(k,v){S.settings[k]=+v||0;save()}
+function menuSet(id,f,v){const m=S.menu.find(x=>x.id===id);m[f]=f==='price'?(+v||0):v;save()}
+function modSet(id,v){S.mods.find(x=>x.id===id).price=+v||0;save()}
+function menuAdd(){
+ const n=$('mn_n').value.trim();if(!n)return alert('Write a name');
+ S.menu.push({id:uid(),name:n,cat:$('mn_c').value,price:+$('mn_p').value||0,rec:[]});save();render();
+}
+function menuDel(id){if(!confirm('Delete this item?'))return;S.menu=S.menu.filter(m=>m.id!==id);save();render()}
+function recAdd(id){
+ const q=+$('rq_'+id).value;if(!q)return alert('Write the quantity');
+ S.menu.find(m=>m.id===id).rec.push({ing:$('ri_'+id).value,qty:q});save();render();
+}
+function recDel(id,i){S.menu.find(m=>m.id===id).rec.splice(i,1);save();render()}
+function exportData(){
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));
+ a.download='waffle-pos-backup-'+todayKey()+'.json';a.click();
+}
+function importData(e){
+ const f=e.target.files[0];if(!f)return;
+ const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.menu)throw 0;S=d;save();render();alert('Backup loaded')}catch(x){alert('Bad file')}};
+ r.readAsText(f);
+}
+function resetAll(){if(confirm('DELETE ALL DATA?')&&confirm('Really sure?')){S=seed();save();render()}}
+function vSetup(){
+ const opts=S.ingredients.map(i=>`<option value="${i.id}">${esc(i.name)} (${esc(i.unit)})</option>`).join('');
+ const menu=S.menu.map(m=>{
+  const c=recCost(m.rec),mg=m.price?Math.round((m.price-c)/m.price*100):0;
+  return `<div class="card"><div class="row"><div><label>Name</label><input value="${esc(m.name)}" onchange="menuSet('${m.id}','name',this.value)"></div>
+  <div><label>Walk-in price</label><input type="number" value="${m.price}" onchange="menuSet('${m.id}','price',this.value);render()"></div></div>
+  <label>Category</label><input value="${esc(m.cat)}" onchange="menuSet('${m.id}','cat',this.value)">
+  <div style="margin-top:8px"><b>Recipe</b> — food cost ${money(c)} · margin <b class="${mg>=60?'green':'redt'}">${mg}%</b></div>
+  ${m.rec.map((r,i)=>`<div class="line"><span>${ing(r.ing)?esc(ing(r.ing).name):'?'} × ${r.qty}</span><button class="red" onclick="recDel('${m.id}',${i})">✕</button></div>`).join('')}
+  <div class="row"><select id="ri_${m.id}">${opts}</select><input id="rq_${m.id}" type="number" placeholder="Qty" style="max-width:90px"><button class="blue sm" onclick="recAdd('${m.id}')">Add</button></div>
+  <button class="red" style="margin-top:6px" onclick="menuDel('${m.id}')">Delete item</button></div>`}).join('');
+ return `<div class="card"><h3 style="margin-top:0">Settings</h3>${FIELDS.map(([k,t])=>`<label>${t}</label><input type="number" step="0.01" value="${S.settings[k]}" onchange="setSet('${k}',this.value)">`).join('')}</div>
+ <h3>Menu</h3>${menu}
+ <div class="card"><h3 style="margin-top:0">Add menu item</h3><label>Name</label><input id="mn_n"><label>Category</label><select id="mn_c"><option>Waffles</option><option>Cold Drinks</option><option>Add-Ons</option></select><label>Walk-in price (৳)</label><input id="mn_p" type="number"><button class="blue" style="margin-top:8px" onclick="menuAdd()">Add item</button></div>
+ <div class="card"><h3 style="margin-top:0">Toppings price</h3>${S.mods.map(x=>`<div class="line"><span>${esc(x.name)}</span><input type="number" style="max-width:100px" value="${x.price}" onchange="modSet('${x.id}',this.value)"></div>`).join('')}</div>
+ <div class="card"><h3 style="margin-top:0">Backup</h3><div class="gray">Your data lives only in this phone's browser. Download a backup often!</div>
+ <button class="blue" style="margin:8px 0" onclick="exportData()">⬇ Download backup</button>
+ <label>Restore backup file</label><input type="file" accept=".json" onchange="importData(event)">
+ <button class="red" style="margin-top:14px" onclick="resetAll()">Delete everything</button></div>`;
+}
+
+/* ---------- RENDER ---------- */
+const VIEWS={pos:vPos,queue:vQueue,stock:vStock,exp:vExp,close:vClose,setup:vSetup};
+function go(t){tab=t;render();window.scrollTo(0,0)}
+function render(){
+ $('app').innerHTML=`<header>🧇 Waffle POS <span>${todayKey()}</span></header><main>${VIEWS[tab]()}</main>
+ <nav>${TABS.map(([k,t])=>`<button class="${tab===k?'on':''}" onclick="go('${k}')"><span>${t.split(' ')[0]}</span>${t.split(' ').slice(1).join(' ')}</button>`).join('')}</nav>${modalHtml()}`;
+}
+setInterval(()=>{if(tab==='queue'&&!modalItem)render()},20000);
+render();
+</script>
+</body>
+</html>
